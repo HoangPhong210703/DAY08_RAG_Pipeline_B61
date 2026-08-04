@@ -168,7 +168,7 @@ Các loại splitter phù hợp:
 
 - `sentence-transformers/all-MiniLM-L6-v2` (nhẹ, nhanh)
 - `BAAI/bge-m3` (multilingual, tốt cho tiếng Việt)
-- OpenAI `text-embedding-3-small` (nếu có API key)
+- OpenRouter `openai/text-embedding-3-small` (dùng `OPENROUTER_API_KEY`)
 
 **Vector Store — sử dụng ChromaDB (Vector Store mặc định của bài lab):**
 
@@ -575,9 +575,97 @@ run_dashboard()
 
 ### Kiến Trúc Hệ Thống
 
+```mermaid
+flowchart TB
+    classDef storage fill:#eef6ff,stroke:#2563eb,color:#0f172a
+    classDef service fill:#ecfdf5,stroke:#059669,color:#0f172a
+    classDef fallback fill:#fff7ed,stroke:#ea580c,color:#0f172a
+    classDef output fill:#f5f3ff,stroke:#7c3aed,color:#0f172a
+
+    subgraph ingest["1. Thu thập và chuẩn hóa dữ liệu — Task 1–3"]
+        legal_src["Văn bản pháp luật lao động\nHuggingFace / vbpl.vn"]
+        news_src["Bài viết, tin tức công khai"]
+        legal_pdf["data/landing/legal\nPDF/DOCX"]
+        news_json["data/landing/news\nJSON"]
+        legal_convert["MarkItDown\nTask 3"]
+        news_convert["Chuẩn hóa metadata\nTask 3"]
+        legal_md["data/standardized/legal\nMarkdown (artifact Task 3)"]
+        legal_db[("ragvbpl.sqlite\nchunks + parsed_articles")]
+        news_md["data/standardized/news\nMarkdown"]
+
+        legal_src --> legal_pdf
+        news_src --> news_json
+        legal_pdf --> legal_convert --> legal_md
+        news_json --> news_convert --> news_md
+        legal_src -. "data_ingestion structure-aware" .-> legal_db
+    end
+
+    subgraph indexing["2. Lập chỉ mục — Task 4"]
+        load["Nạp corpus\nlegal SQLite + news Markdown"]
+        chunk["Recursive chunking\n800 ký tự, overlap 100"]
+        embed["OpenRouter Embeddings\nopenai/text-embedding-3-small · 1536d"]
+        chroma[("ChromaDB local\ncosine vectors + metadata")]
+
+        legal_db --> load
+        news_md --> load --> chunk --> embed --> chroma
+    end
+
+    subgraph fallback_index["3. Chỉ mục vectorless — Task 8"]
+        structure["Cây Document → Chapter → Article\nso khớp tiêu đề, giữ nguyên Điều"]
+        legal_db --> structure
+    end
+
+    subgraph answer["4. Truy xuất, sinh câu trả lời và hiển thị — Task 5–10"]
+        user(["Người dùng"])
+        ui["Streamlit chatbot\napp.py"]
+        query["Câu hỏi + cấu hình\ntop_k, mode, threshold"]
+        dense["Semantic search — Task 5\nembed query + cosine similarity"]
+        lexical["Lexical search — Task 6\nBM25 trên cùng corpus chunk"]
+        rrf["Hybrid fusion / rerank — Task 7\nRRF, deduplicate"]
+        gate{"Top-1 cosine gốc\nthấp hơn score_threshold?"}
+        pageindex["PageIndex fallback\nTask 8"]
+        contexts["Top-k chunks\nsource: hybrid hoặc pageindex"]
+        reorder["Reorder chống lost in the middle\n+ format context có nguồn"]
+        llm["OpenRouter LLM\nopenai/gpt-4o-mini"]
+        response["Trả lời tiếng Việt\ncitation + sources\nhoặc I cannot verify"]
+
+        user --> ui --> query
+        query --> dense
+        query --> lexical
+        dense --> rrf
+        lexical --> rrf
+        dense -. "cosine gốc" .-> gate
+        rrf --> gate
+        gate -- "Không" --> contexts
+        gate -- "Có" --> pageindex
+        pageindex -- "có kết quả" --> contexts
+        pageindex -- "không có kết quả" --> contexts
+        contexts --> reorder --> llm --> response --> ui
+    end
+
+    chroma --> dense
+    chunk --> lexical
+    structure --> pageindex
+
+    subgraph evaluation["5. Đánh giá offline"]
+        golden["golden_dataset.json\n20 câu hỏi và evidence kỳ vọng"]
+        eval["eval_pipeline.py\nA/B: hybrid + RRF / không RRF"]
+        ragas["RAGAS\nfaithfulness · relevance\ncontext recall · precision"]
+        report["results.md\nđiểm, worst cases, khuyến nghị"]
+
+        golden --> eval --> ragas --> report
+    end
+
+    eval -. "gọi cùng retrieval + generation" .-> query
+
+    class legal_db,news_md,chroma storage
+    class legal_convert,news_convert,load,chunk,embed,dense,lexical,rrf,reorder,llm,ui service
+    class structure,pageindex,gate fallback
+    class response,report output
 ```
-[Vẽ diagram kiến trúc ở đây]
-```
+
+Nhánh fallback chỉ so sánh ngưỡng với **cosine similarity gốc** của semantic search;
+điểm RRF chỉ dùng để xếp hạng kết quả hybrid.
 
 ---
 
