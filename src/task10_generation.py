@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from .task9_retrieval_pipeline import retrieve
+from .task9_retrieval_pipeline import SCORE_THRESHOLD, retrieve
 
 
 # =============================================================================
@@ -138,7 +138,15 @@ def format_context(chunks: list[dict]) -> str:
 # GENERATION
 # =============================================================================
 
-def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
+def generate_with_citation(
+    query: str,
+    top_k: int = TOP_K,
+    temperature: float = TEMPERATURE,
+    top_p: float = TOP_P,
+    score_threshold: float = SCORE_THRESHOLD,
+    use_reranking: bool = True,
+    mode: str = "hybrid",  # "hybrid" | "semantic" | "lexical" — xem task9_retrieval_pipeline.retrieve
+) -> dict:
     """
     End-to-end RAG generation có citation.
 
@@ -152,16 +160,27 @@ def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
 
     Args:
         query: Câu hỏi của user
+        top_k: Số chunks đưa vào context
+        temperature, top_p: tham số sinh của LLM (mặc định xem CONFIGURATION ở trên)
+        score_threshold, use_reranking, mode: pass-through cho Task 9 retrieve() — cho
+            phép UI thử nghiệm so sánh hybrid/semantic/lexical, có/không rerank, ngưỡng
+            fallback khác nhau
 
     Returns:
         {
             'answer': str,           # Câu trả lời có citation
             'sources': list[dict],   # Các chunks đã dùng
-            'retrieval_source': str  # 'hybrid' hoặc 'pageindex'
+            'retrieval_source': str  # 'hybrid' | 'semantic' | 'lexical' | 'pageindex'
         }
     """
     # Step 1: Retrieve
-    chunks = retrieve(query, top_k=top_k)
+    chunks = retrieve(
+        query,
+        top_k=top_k,
+        score_threshold=score_threshold,
+        use_reranking=use_reranking,
+        mode=mode,
+    )
 
     # Step 2: Reorder (tránh lost in the middle)
     reordered = reorder_for_llm(chunks)
@@ -180,8 +199,8 @@ def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message},
         ],
-        temperature=TEMPERATURE,
-        top_p=TOP_P,
+        temperature=temperature,
+        top_p=top_p,
     )
     answer = response.choices[0].message.content
 
