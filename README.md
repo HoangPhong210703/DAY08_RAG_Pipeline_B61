@@ -8,7 +8,6 @@ sdk_version: "1.35.0"
 app_file: app.py
 pinned: false
 ---
-
 # Ngày 8 — RAG Pipeline v2
 
 **Chương 2 | Ngày 8 trong 15**
@@ -74,12 +73,14 @@ K3-Day08-RAG-Pipeline-Starter/
 Tìm và tải về **tối thiểu 3 văn bản chính sách/quy định** dạng PDF/DOCX về dịch vụ đại học (học phí, học bổng, ký túc xá, đăng ký học phần). Lưu vào `data/landing/`.
 
 **Gợi ý nguồn** (ví dụ trang công khai RMIT Vietnam):
+
 - Học phí & phương thức thanh toán (Tuition Fees)
 - Chính sách học bổng (Scholarship eligibility)
 - Quy định ký túc xá / hỗ trợ chỗ ở (Accommodation Services)
 - Cổng đăng ký học phần (Course Registration Portal)
 
 **Yêu cầu:**
+
 - Lưu file gốc (PDF/DOCX) vào `data/landing/legal/`
 - Đặt tên file rõ ràng: `tuition-fees-rmit.pdf`, `academic-achievement-scholarship-rmit.pdf`, ...
 
@@ -92,11 +93,13 @@ Crawl **tối thiểu 5 bài viết** về thông tin/thông báo dịch vụ đ
 **Thư viện khuyến nghị:** [Crawl4AI](https://github.com/unclecode/crawl4ai)
 
 **Yêu cầu:**
+
 - Lưu output vào `data/landing/news/`
 - Mỗi bài báo lưu thành 1 file (JSON hoặc HTML)
 - Ghi rõ metadata: URL gốc, ngày crawl, tiêu đề bài báo
 
 **Code mẫu (Crawl4AI):**
+
 ```python
 from crawl4ai import AsyncWebCrawler
 
@@ -114,11 +117,13 @@ async def crawl_article(url: str, output_dir: str):
 Sử dụng [MarkItDown](https://github.com/microsoft/markitdown) của Microsoft để convert toàn bộ file trong `data/landing/` thành Markdown.
 
 **Cài đặt:**
+
 ```bash
 pip install markitdown
 ```
 
 **Code mẫu:**
+
 ```python
 from markitdown import MarkItDown
 
@@ -136,6 +141,7 @@ result = md.convert("data/landing/legal/academic-achievement-scholarship-rmit.do
 PDF — nếu chỉ `pip install markitdown` sẽ báo lỗi `MissingDependencyException` khi convert PDF.
 
 **Yêu cầu:**
+
 - Output lưu vào `data/standardized/`
 - Giữ nguyên cấu trúc thư mục con (`legal/`, `news/`)
 - Mỗi file output có tên tương ứng: `tuition-fees-rmit.md`
@@ -147,28 +153,34 @@ PDF — nếu chỉ `pip install markitdown` sẽ báo lỗi `MissingDependencyE
 Chọn **một loại chunking strategy** và **một embedding model** để index toàn bộ markdown files vào vector store.
 
 **Chunking — khuyến khích dùng [langchain-text-splitters](https://python.langchain.com/docs/modules/data_connection/document_transformers/):**
+
 ```bash
 pip install langchain-text-splitters
 ```
 
 Các loại splitter phù hợp:
+
 - `RecursiveCharacterTextSplitter` (mặc định, an toàn)
 - `MarkdownHeaderTextSplitter` (tốt cho file có heading rõ)
 - `SemanticChunker` (nâng cao, dùng embedding để tách)
 
 **Embedding model gợi ý:**
+
 - `sentence-transformers/all-MiniLM-L6-v2` (nhẹ, nhanh)
 - `BAAI/bge-m3` (multilingual, tốt cho tiếng Việt)
 - OpenAI `text-embedding-3-small` (nếu có API key)
 
 **Vector Store — sử dụng ChromaDB (Vector Store mặc định của bài lab):**
+
 ```bash
 pip install chromadb
 ```
+
 - ChromaDB lưu trữ vector embeddings (`BAAI/bge-m3`), metadata và thông tin phân đoạn local tại thư mục `chroma_db/`
 - Hỗ trợ truy vấn tìm kiếm tương đồng Cosine (Cosine Similarity Search) phục vụ Dense Retrieval ở Task 5
 
 **Yêu cầu:**
+
 - Ghi rõ trong code: dùng chunking nào, chunk_size bao nhiêu, overlap bao nhiêu, vì sao
 - Ghi rõ embedding model nào, dimension bao nhiêu
 - Index thành công toàn bộ documents
@@ -180,6 +192,7 @@ pip install chromadb
 Viết module thực hiện **semantic search** (dense retrieval) trên vector store.
 
 **Yêu cầu:**
+
 ```python
 def semantic_search(query: str, top_k: int = 10) -> list[dict]:
     """
@@ -204,6 +217,7 @@ pip install rank-bm25
 ```
 
 **Code mẫu BM25:**
+
 ```python
 from rank_bm25 import BM25Okapi
 
@@ -217,6 +231,7 @@ scores = bm25.get_scores(tokenized_query)
 ```
 
 **Yêu cầu:**
+
 ```python
 def lexical_search(query: str, top_k: int = 10) -> list[dict]:
     """
@@ -236,14 +251,16 @@ Viết module **reranking** để chấm lại độ liên quan của kết qu�
 
 **Lựa chọn (chọn 1):**
 
-| Phương pháp | Thư viện / Model | Đặc điểm |
-|-------------|-----------------|-----------|
-| Cross-encoder reranker | `jinaai/jina-reranker-v2-base-multilingual` | Multilingual, tốt cho tiếng Việt |
-| Cross-encoder reranker | `Qwen/Qwen3-Reranker-0.6B` | Nhẹ, hiệu quả |
-| MMR (Maximal Marginal Relevance) | Tự implement | Giảm trùng lặp, tăng diversity |
-| RRF (Reciprocal Rank Fusion) | Tự implement | Gộp kết quả từ nhiều ranker |
+
+| Phương pháp                   | Thư viện / Model                          | Đặc điểm                        |
+| ---------------------------------- | --------------------------------------------- | ------------------------------------- |
+| Cross-encoder reranker           | `jinaai/jina-reranker-v2-base-multilingual` | Multilingual, tốt cho tiếng Việt |
+| Cross-encoder reranker           | `Qwen/Qwen3-Reranker-0.6B`                  | Nhẹ, hiệu quả                    |
+| MMR (Maximal Marginal Relevance) | Tự implement                               | Giảm trùng lặp, tăng diversity  |
+| RRF (Reciprocal Rank Fusion)     | Tự implement                               | Gộp kết quả từ nhiều ranker    |
 
 **Code mẫu (Jina Reranker via API):**
+
 ```python
 import requests
 
@@ -262,6 +279,7 @@ def rerank(query: str, documents: list[str], top_k: int = 5) -> list[dict]:
 ```
 
 **Yêu cầu:**
+
 ```python
 def rerank(query: str, candidates: list[dict], top_k: int = 5) -> list[dict]:
     """
@@ -277,6 +295,7 @@ def rerank(query: str, candidates: list[dict], top_k: int = 5) -> list[dict]:
 Đăng ký tài khoản tại [https://pageindex.ai/](https://pageindex.ai/), sau đó sử dụng [PageIndex SDK](https://github.com/VectifyAI/PageIndex) để tạo một **vectorless RAG pipeline**.
 
 **Cài đặt:**
+
 ```bash
 pip install pageindex
 ```
@@ -284,8 +303,10 @@ pip install pageindex
 **Tham khảo:** [https://github.com/VectifyAI/PageIndex](https://github.com/VectifyAI/PageIndex)
 
 **Yêu cầu:**
+
 - Upload tài liệu lên PageIndex
 - Viết function query PageIndex và trả về kết quả
+
 ```python
 def pageindex_search(query: str, top_k: int = 5) -> list[dict]:
     """
@@ -313,6 +334,7 @@ Query
 ```
 
 **Yêu cầu:**
+
 ```python
 def retrieve(query: str, top_k: int = 5, score_threshold: float = 0.3) -> list[dict]:
     """
@@ -332,8 +354,6 @@ def retrieve(query: str, top_k: int = 5, score_threshold: float = 0.3) -> list[d
 > lạc đề). Hãy so `score_threshold` với **điểm cosine similarity gốc** từ `semantic_search`
 > (Task 5, thang đo `[0,1]` có ý nghĩa) — tách riêng khỏi điểm dùng để sắp xếp kết quả cuối cùng.
 
-
-
 ---
 
 ### Task 10 — Generation Có Citation
@@ -341,6 +361,7 @@ def retrieve(query: str, top_k: int = 5, score_threshold: float = 0.3) -> list[d
 Sắp xếp lại context chunks sau reranking để **tránh lost in the middle**, inject vào prompt, và yêu cầu LLM trả lời có **citation**.
 
 **Document Reordering (tránh lost in the middle):**
+
 ```python
 def reorder_for_llm(chunks: list[dict]) -> list[dict]:
     """
@@ -352,6 +373,7 @@ def reorder_for_llm(chunks: list[dict]) -> list[dict]:
 ```
 
 **Prompt template:**
+
 ```python
 SYSTEM_PROMPT = """Answer the following question comprehensively.
 For every statement of fact or claim, immediately insert a citation
@@ -373,6 +395,7 @@ def generate_with_citation(query: str, context_chunks: list[dict]) -> str:
 ```
 
 **Yêu cầu:**
+
 - Chọn top_k và top_p phù hợp (giải thích lý do trong code comment)
 - Output phải có citation dạng `[Nguồn, Năm]`
 - Nếu không đủ evidence → trả về "I cannot verify this information"
@@ -390,12 +413,14 @@ def generate_with_citation(query: str, context_chunks: list[dict]) -> str:
 Xây dựng chatbot trả lời câu hỏi về chính sách và dịch vụ đại học liên quan.
 
 **Yêu cầu:**
+
 - Giao diện chat (Streamlit / Gradio / Chainlit)
 - Trả lời có citation (dựa trên Task 10)
 - Hỗ trợ follow-up questions (conversation memory)
 - Hiển thị source documents đã dùng
 
 **Stack gợi ý:**
+
 ```
 Chainlit/Streamlit → Retrieval (Task 9) → Generation (Task 10) → Display
 ```
@@ -408,11 +433,12 @@ Sử dụng **1 trong 3 framework** sau để evaluate pipeline RAG của nhóm:
 
 #### Framework lựa chọn
 
-| Framework | Cài đặt | Đặc điểm |
-|-----------|---------|-----------|
+
+| Framework                                            | Cài đặt             | Đặc điểm                                      |
+| ------------------------------------------------------ | ------------------------ | --------------------------------------------------- |
 | [DeepEval](https://github.com/confident-ai/deepeval) | `pip install deepeval` | Nhiều metric built-in, dễ integrate với pytest |
-| [RAGAS](https://github.com/explodinggradients/ragas) | `pip install ragas` | Chuẩn industry cho RAG eval, 3 trục chính |
-| [TruLens](https://github.com/truera/trulens) | `pip install trulens` | Dashboard UI, feedback functions mạnh |
+| [RAGAS](https://github.com/explodinggradients/ragas) | `pip install ragas`    | Chuẩn industry cho RAG eval, 3 trục chính      |
+| [TruLens](https://github.com/truera/trulens)         | `pip install trulens`  | Dashboard UI, feedback functions mạnh            |
 
 #### Yêu cầu Evaluation
 
@@ -530,10 +556,10 @@ run_dashboard()
 
 #### Deliverable Evaluation
 
-- [ ] File `group_project/evaluation/golden_dataset.json` — 15+ cặp Q&A
-- [ ] File `group_project/evaluation/eval_pipeline.py` — script chạy evaluation
-- [ ] File `group_project/evaluation/results.md` — bảng điểm + phân tích
-- [ ] So sánh A/B ít nhất 2 configs
+- [ ]  File `group_project/evaluation/golden_dataset.json` — 15+ cặp Q&A
+- [ ]  File `group_project/evaluation/eval_pipeline.py` — script chạy evaluation
+- [ ]  File `group_project/evaluation/results.md` — bảng điểm + phân tích
+- [ ]  So sánh A/B ít nhất 2 configs
 
 ---
 
@@ -557,12 +583,13 @@ run_dashboard()
 
 ### Phân Công Công Việc
 
+
 | Thành viên | MSSV | Nhiệm vụ | Trạng thái |
-|-----------|------|----------|------------|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| -------------- | ------ | ------------ | -------------- |
+|              |      |            |              |
+|              |      |            |              |
+|              |      |            |              |
+|              |      |            |              |
 
 ---
 
@@ -593,6 +620,7 @@ pip install -r requirements.txt
 ```
 
 Tạo file `.env` từ `.env.example`:
+
 ```bash
 cp .env.example .env
 # Điền API keys vào .env
@@ -604,11 +632,12 @@ cp .env.example .env
 
 ### Tổng Quan Phân Bổ Điểm
 
-| Thành phần | Tỷ trọng | Mô tả |
-|-----------|----------|-------|
-| **Pipeline Kỹ Thuật (Task 1-10)** | **50%** | 10 tasks, cả nhóm cùng làm, chấm bằng automated tests + manual review |
-| **Bài Nhóm** | **30%** | RAG Chatbot + Evaluation pipeline |
-| **Bonus** | **20%** | Các tiêu chí nâng cao (xem bên dưới) |
+
+| Thành phần                        | Tỷ trọng | Mô tả                                                                     |
+| ------------------------------------- | ------------ | ----------------------------------------------------------------------------- |
+| **Pipeline Kỹ Thuật (Task 1-10)** | **50%**    | 10 tasks, cả nhóm cùng làm, chấm bằng automated tests + manual review |
+| **Bài Nhóm**                      | **30%**    | RAG Chatbot + Evaluation pipeline                                           |
+| **Bonus**                           | **20%**    | Các tiêu chí nâng cao (xem bên dưới)                                 |
 
 ---
 
@@ -616,47 +645,50 @@ cp .env.example .env
 
 Chấm bằng automated test suite (`pytest tests/ -v`). Mỗi task có test riêng.
 
-| Task | Nội dung | Điểm | Test |
-|------|----------|------|------|
-| 1 | Thu thập văn bản chính sách đại học (≥3 files tồn tại trong `data/landing/legal/`) | 3 | `test_task1_*` |
-| 2 | Crawl bài viết/thông báo (≥5 files tồn tại trong `data/landing/news/`) | 3 | `test_task2_*` |
-| 3 | Convert markdown (files tồn tại trong `data/standardized/`) | 4 | `test_task3_*` |
-| 4 | Chunking + Indexing (vector store có data) | 7 | `test_task4_*` |
-| 5 | Semantic search trả về kết quả đúng format, sorted | 6 | `test_task5_*` |
-| 6 | Lexical search (BM25) trả về kết quả đúng format | 6 | `test_task6_*` |
-| 7 | Reranking hoạt động, output re-sorted | 6 | `test_task7_*` |
-| 8 | PageIndex query trả về kết quả | 4 | `test_task8_*` |
-| 9 | Retrieval pipeline + fallback logic hoạt động | 7 | `test_task9_*` |
-| 10 | Generation có citation + reorder | 4 | `test_task10_*` |
-| **Tổng** | | **50** | |
+
+| Task      | Nội dung                                                                                    | Điểm | Test            |
+| ----------- | ---------------------------------------------------------------------------------------------- | -------- | ----------------- |
+| 1         | Thu thập văn bản chính sách đại học (≥3 files tồn tại trong`data/landing/legal/`) | 3      | `test_task1_*`  |
+| 2         | Crawl bài viết/thông báo (≥5 files tồn tại trong`data/landing/news/`)                 | 3      | `test_task2_*`  |
+| 3         | Convert markdown (files tồn tại trong`data/standardized/`)                                 | 4      | `test_task3_*`  |
+| 4         | Chunking + Indexing (vector store có data)                                                  | 7      | `test_task4_*`  |
+| 5         | Semantic search trả về kết quả đúng format, sorted                                     | 6      | `test_task5_*`  |
+| 6         | Lexical search (BM25) trả về kết quả đúng format                                       | 6      | `test_task6_*`  |
+| 7         | Reranking hoạt động, output re-sorted                                                     | 6      | `test_task7_*`  |
+| 8         | PageIndex query trả về kết quả                                                           | 4      | `test_task8_*`  |
+| 9         | Retrieval pipeline + fallback logic hoạt động                                             | 7      | `test_task9_*`  |
+| 10        | Generation có citation + reorder                                                            | 4      | `test_task10_*` |
+| **Tổng** |                                                                                              | **50** |                 |
 
 ---
 
 ### Bài Nhóm — 30 điểm (30%)
 
-| Tiêu chí | Điểm |
-|----------|------|
-| RAG Chatbot demo hoạt động được | 8 |
-| Tích hợp pipeline Task 1-10 đã xây dựng | 4 |
-| Kiến trúc rõ ràng + README | 3 |
-| Chất lượng câu trả lời (có citation, đúng nội dung) | 3 |
-| **Evaluation pipeline** (DeepEval / RAGAS / TruLens) | **12** |
-| — Golden dataset ≥15 Q&A pairs | 3 |
-| — Chạy eval với ≥4 metrics | 4 |
-| — So sánh A/B ≥2 configs + phân tích | 3 |
-| — Báo cáo kết quả có phân tích worst performers | 2 |
+
+| Tiêu chí                                                    | Điểm |
+| --------------------------------------------------------------- | -------- |
+| RAG Chatbot demo hoạt động được                         | 8      |
+| Tích hợp pipeline Task 1-10 đã xây dựng                 | 4      |
+| Kiến trúc rõ ràng + README                                | 3      |
+| Chất lượng câu trả lời (có citation, đúng nội dung) | 3      |
+| **Evaluation pipeline** (DeepEval / RAGAS / TruLens)          | **12** |
+| — Golden dataset ≥15 Q&A pairs                              | 3      |
+| — Chạy eval với ≥4 metrics                                | 4      |
+| — So sánh A/B ≥2 configs + phân tích                     | 3      |
+| — Báo cáo kết quả có phân tích worst performers       | 2      |
 
 ---
 
 ### Bonus — 20 điểm (20%)
 
-| Tiêu chí | Điểm |
-|----------|------|
-| Giải thích cơ chế lexical search khác BM25 (trong demo) | 5 |
-| Implement phương pháp hỗ trợ Semantic Search (HyDE, Query Expansion, ...) | 5 |
-| Deploy chatbot online (Hugging Face Spaces / Render / ...) | 4 |
-| Conversation memory (multi-turn chat) | 3 |
-| UI/UX chất lượng (hiển thị source, score, highlight) | 3 |
+
+| Tiêu chí                                                                     | Điểm |
+| -------------------------------------------------------------------------------- | -------- |
+| Giải thích cơ chế lexical search khác BM25 (trong demo)                   | 5      |
+| Implement phương pháp hỗ trợ Semantic Search (HyDE, Query Expansion, ...) | 5      |
+| Deploy chatbot online (Hugging Face Spaces / Render / ...)                     | 4      |
+| Conversation memory (multi-turn chat)                                          | 3      |
+| UI/UX chất lượng (hiển thị source, score, highlight)                      | 3      |
 
 ---
 
@@ -677,15 +709,16 @@ pytest tests/test_individual.py::TestTask5 -v
 
 Theo đúng 7 Checkpoint trong `checkpoint_timer.html` (tổng 180 phút = 3 giờ):
 
-| Checkpoint | Thời gian | Khoảng giờ | Hoạt động |
-|------------|-----------|-------------|-----------|
-| CP0 | 10 phút | 0:00–0:10 | Setup môi trường & khai báo API keys |
-| CP1 | 25 phút | 0:10–0:35 | Task 1–3: Thu thập data + convert markdown |
-| CP2 | 25 phút | 0:35–1:00 | Task 4–6: Chunking, indexing, search modules |
-| CP3 | 20 phút | 1:00–1:20 | Task 7–8: Reranking + PageIndex fallback |
-| CP4 | 25 phút | 1:20–1:45 | Task 9–10: Pipeline hoàn chỉnh + generation (mốc 50đ Task 1-10) |
-| CP5 | 30 phút | 1:45–2:15 | Bài nhóm: Chatbot UI & đánh giá RAGAS |
-| CP6 | 45 phút | 2:15–3:00 | Thuyết trình demo live & nộp bài |
+
+| Checkpoint | Thời gian | Khoảng giờ | Hoạt động                                                         |
+| ------------ | ------------ | -------------- | ---------------------------------------------------------------------- |
+| CP0        | 10 phút   | 0:00–0:10   | Setup môi trường & khai báo API keys                             |
+| CP1        | 25 phút   | 0:10–0:35   | Task 1–3: Thu thập data + convert markdown                         |
+| CP2        | 25 phút   | 0:35–1:00   | Task 4–6: Chunking, indexing, search modules                        |
+| CP3        | 20 phút   | 1:00–1:20   | Task 7–8: Reranking + PageIndex fallback                            |
+| CP4        | 25 phút   | 1:20–1:45   | Task 9–10: Pipeline hoàn chỉnh + generation (mốc 50đ Task 1-10) |
+| CP5        | 30 phút   | 1:45–2:15   | Bài nhóm: Chatbot UI & đánh giá RAGAS                           |
+| CP6        | 45 phút   | 2:15–3:00   | Thuyết trình demo live & nộp bài                                 |
 
 ---
 
