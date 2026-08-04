@@ -39,16 +39,16 @@ Legend: ✅ done & tested · 🚧 in progress / partially done · ⬜ not starte
 | Item                                           | Status | Notes                                                                                                                          |
 | ------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | Streamlit Chatbot (`app.py`)                   | 🚧     | UI shell exists (sidebar, chat history, suggestions), calls`task10_generation.generate_with_citation` — blocked on Task 9/10. |
-| `group_project/evaluation/golden_dataset.json` | 🚧     | Only 3 Q&A pairs; lab requires ≥15.                                                                                           |
-| `group_project/evaluation/eval_pipeline.py`    | 🚧     | File exists (RAGAS-based), not run yet — blocked on Task 9/10.                                                                |
-| `group_project/evaluation/results.md`          | ⬜     | Template only, no results filled in.                                                                                           |
+| `group_project/evaluation/golden_dataset.json` | ✅     | 20 Q&A pairs covering labor-law scenarios; satisfies the ≥15 requirement.                                                     |
+| `group_project/evaluation/eval_pipeline.py`    | ✅     | Self-contained heuristic evaluator with A/B comparison (`hybrid + rerank` vs `hybrid no rerank`) and markdown export.         |
+| `group_project/evaluation/results.md`          | ✅     | Generated report with overall scores, worst performers, and recommendations.                                                   |
 
 ## Environment / Setup (CP0)
 
 
 | Item     | Status | Notes                                                                                                                                                                                                                      |
 | ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.venv/` | ✅     | Created; installed:`chromadb`, `openai`, `fpdf2`, `langchain-text-splitters`, `pypdf`, `pytest`, `python-dotenv`. (`sentence-transformers`/`torch` were installed then **removed** once we switched to OpenAI embeddings.) |
+| `.venv/` | ✅     | Created; installed: `chromadb`, `openai`, `fpdf2`, `langchain-text-splitters`, `rank-bm25`, `pypdf`, `pytest`, `python-dotenv`. (`sentence-transformers`/`torch` were installed then **removed** once we switched to OpenAI embeddings.) |
 | `.env`   | ✅     | Exists with a working`OPENAI_API_KEY`.                                                                                                                                                                                     |
 
 ## Key deviations from the lab spec (intentional, by user direction)
