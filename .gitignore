@@ -25,3 +25,6 @@ pageindex_pdfs/
 # OS
 .DS_Store
 Thumbs.db
+
+AGENTS.md
+myenv311/

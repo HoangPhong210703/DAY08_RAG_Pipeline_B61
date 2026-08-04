@@ -1,17 +1,102 @@
 [
   {
-    "question": "Học phí hàng năm của chương trình Business tại RMIT Vietnam là bao nhiêu?",
-    "expected_answer": "Khoảng 375.840.000 VND mỗi năm (tùy chương trình cụ thể).",
-    "expected_context": "Trang Tuition Fees, mục Undergraduate Programs"
+    "question": "Khi nào một thỏa thuận được xem là hợp đồng lao động dù hai bên gọi tên khác?",
+    "expected_answer": "Nếu thỏa thuận có nội dung về việc làm có trả công, tiền lương và có sự quản lý, điều hành, giám sát của một bên thì được coi là hợp đồng lao động, dù được đặt tên khác.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 13 về khái niệm hợp đồng lao động."
   },
   {
-    "question": "Học phí được thanh toán theo hình thức nào?",
-    "expected_answer": "Thanh toán theo từng học kỳ, tính theo từng môn học đã đăng ký.",
-    "expected_context": "Trang Tuition Fees, mục Payment Structure"
+    "question": "Hợp đồng lao động điện tử có giá trị như hợp đồng giấy không? Người lao động có thể ký hợp đồng bằng lời nói không?",
+    "expected_answer": "Hợp đồng lao động được giao kết bằng thông điệp dữ liệu theo pháp luật về giao dịch điện tử có giá trị như hợp đồng bằng văn bản. Hợp đồng có thời hạn dưới 01 tháng có thể giao kết bằng lời nói, trừ các trường hợp pháp luật quy định phải lập bằng văn bản.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 14 về hình thức hợp đồng lao động."
   },
   {
-    "question": "Trường có cung cấp ký túc xá trong khuôn viên không?",
-    "expected_answer": "Không — trường không cung cấp chỗ ở trong khuôn viên, nhưng có đội ngũ hỗ trợ sinh viên tìm chỗ ở gần trường.",
-    "expected_context": "Trang Accommodation Services"
+    "question": "Công ty có được giữ bản gốc căn cước công dân, bằng đại học hoặc yêu cầu người lao động đặt cọc khi nhận việc không?",
+    "expected_answer": "Không. Người sử dụng lao động không được giữ bản chính giấy tờ tùy thân, văn bằng hoặc chứng chỉ của người lao động; cũng không được yêu cầu người lao động bảo đảm bằng tiền hoặc tài sản để thực hiện hợp đồng lao động.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 17 về các hành vi người sử dụng lao động không được làm khi giao kết, thực hiện hợp đồng lao động."
+  },
+  {
+    "question": "Một lập trình viên có trình độ đại học phải thử việc tối đa bao nhiêu ngày?",
+    "expected_answer": "Thời gian thử việc tối đa là 60 ngày đối với công việc có chức danh nghề nghiệp cần trình độ chuyên môn, kỹ thuật từ cao đẳng trở lên.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 25 về thời gian thử việc."
+  },
+  {
+    "question": "Lương thử việc tối thiểu phải bằng bao nhiêu phần trăm lương của công việc đó?",
+    "expected_answer": "Tiền lương của người lao động trong thời gian thử việc ít nhất phải bằng 85% mức lương của công việc đó.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 26 về tiền lương trong thời gian thử việc."
+  },
+  {
+    "question": "Doanh nghiệp có được thử việc một công việc hai lần không? Hợp đồng lao động dưới một tháng có phải thử việc không?",
+    "expected_answer": "Mỗi công việc chỉ được thử việc một lần. Người lao động giao kết hợp đồng lao động có thời hạn dưới 01 tháng thì không phải thử việc.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 24 và Điều 25 về thử việc."
+  },
+  {
+    "question": "Khi kết thúc thời gian thử việc, công ty phải xử lý và thông báo như thế nào?",
+    "expected_answer": "Khi kết thúc thời gian thử việc, người sử dụng lao động phải thông báo kết quả cho người lao động. Nếu đạt yêu cầu thì tiếp tục thực hiện hợp đồng đã giao kết hoặc ký hợp đồng lao động; nếu không đạt thì chấm dứt hợp đồng thử việc hoặc phần thử việc trong hợp đồng lao động.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 27 về kết thúc thời gian thử việc."
+  },
+  {
+    "question": "Công ty tuyển người học nghề hoặc tập nghề để làm việc cho mình có được thu học phí không?",
+    "expected_answer": "Không. Người sử dụng lao động tuyển người vào học nghề, tập nghề để làm việc cho mình không được thu học phí và phải ký hợp đồng đào tạo theo quy định. Nếu người học nghề, tập nghề trực tiếp hoặc tham gia làm ra sản phẩm thì còn được trả lương theo thỏa thuận.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 61 về học nghề, tập nghề để làm việc cho người sử dụng lao động."
+  },
+  {
+    "question": "Hợp đồng đào tạo nghề giữa người lao động và công ty cần có những nội dung chủ yếu nào?",
+    "expected_answer": "Hợp đồng đào tạo nghề cần có nghề đào tạo; địa điểm, thời gian và tiền lương trong thời gian đào tạo; thời hạn cam kết làm việc sau đào tạo; chi phí đào tạo và trách nhiệm hoàn trả; cùng trách nhiệm của người sử dụng lao động và người lao động.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 62 khoản 2 về nội dung hợp đồng đào tạo nghề."
+  },
+  {
+    "question": "Hợp đồng lao động xác định thời hạn được ký tối đa trong bao lâu?",
+    "expected_answer": "Hợp đồng lao động xác định thời hạn có thời hạn không quá 36 tháng kể từ thời điểm có hiệu lực của hợp đồng.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 20 về loại hợp đồng lao động."
+  },
+  {
+    "question": "Thời giờ làm việc bình thường tối đa của người lao động là bao nhiêu?",
+    "expected_answer": "Thời giờ làm việc bình thường không quá 08 giờ trong một ngày và 48 giờ trong một tuần. Nếu doanh nghiệp bố trí làm việc theo tuần thì có thể không quá 10 giờ trong một ngày nhưng vẫn không quá 48 giờ trong một tuần; Nhà nước khuyến khích tuần làm việc 40 giờ.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 105 về thời giờ làm việc bình thường."
+  },
+  {
+    "question": "Theo Bộ luật Lao động 2019, thời gian làm việc ban đêm được tính từ mấy giờ đến mấy giờ?",
+    "expected_answer": "Thời giờ làm việc ban đêm được tính từ 22 giờ đến 06 giờ sáng ngày hôm sau.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 106 về giờ làm việc ban đêm."
+  },
+  {
+    "question": "Công ty có được tự ý yêu cầu người lao động làm thêm giờ không?",
+    "expected_answer": "Về nguyên tắc, người sử dụng lao động chỉ được sử dụng người lao động làm thêm giờ khi có sự đồng ý của người lao động và phải bảo đảm các giới hạn, điều kiện về số giờ làm thêm theo pháp luật. Một số trường hợp đặc biệt do pháp luật quy định là ngoại lệ.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 107 về làm thêm giờ và các điều kiện sử dụng người lao động làm thêm giờ."
+  },
+  {
+    "question": "Làm thêm giờ vào ngày thường, ngày nghỉ hằng tuần và ngày lễ thì được trả ít nhất bao nhiêu phần trăm lương?",
+    "expected_answer": "Làm thêm vào ngày thường được trả ít nhất 150%; vào ngày nghỉ hằng tuần ít nhất 200%; vào ngày lễ, tết hoặc ngày nghỉ có hưởng lương ít nhất 300%, chưa kể tiền lương của ngày lễ hoặc ngày nghỉ có hưởng lương đối với người hưởng lương ngày.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 98 khoản 1 về tiền lương làm thêm giờ."
+  },
+  {
+    "question": "Người lao động làm việc ban đêm hoặc làm thêm vào ban đêm được trả thêm như thế nào?",
+    "expected_answer": "Làm việc vào ban đêm được trả thêm ít nhất 30% tiền lương tính theo đơn giá hoặc tiền lương của công việc trong ngày làm việc bình thường. Nếu làm thêm vào ban đêm thì ngoài các khoản trên còn được trả thêm 20% tiền lương của công việc làm vào ban ngày.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 98 khoản 2 và khoản 3 về tiền lương làm việc ban đêm và làm thêm vào ban đêm."
+  },
+  {
+    "question": "Người lao động làm đủ 12 tháng trong điều kiện bình thường được nghỉ phép năm bao nhiêu ngày? Nếu chưa đủ 12 tháng thì tính thế nào?",
+    "expected_answer": "Người lao động làm đủ 12 tháng cho một người sử dụng lao động trong điều kiện bình thường được nghỉ 12 ngày làm việc mỗi năm. Người làm chưa đủ 12 tháng được nghỉ số ngày theo tỷ lệ tương ứng với thời gian làm việc.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 113 về nghỉ hằng năm."
+  },
+  {
+    "question": "Người lao động được nghỉ hưởng nguyên lương bao nhiêu ngày lễ, tết theo Bộ luật Lao động 2019?",
+    "expected_answer": "Tổng cộng là 11 ngày: 01 ngày Tết Dương lịch, 05 ngày Tết Âm lịch, 01 ngày 30/4, 01 ngày 1/5, 02 ngày Quốc khánh và 01 ngày Giỗ Tổ Hùng Vương. Nếu ngày nghỉ hằng tuần trùng ngày lễ, người lao động được nghỉ bù vào ngày làm việc kế tiếp.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 111 khoản 3 và Điều 112 về nghỉ hằng tuần, nghỉ lễ, tết."
+  },
+  {
+    "question": "Người lao động muốn đơn phương chấm dứt hợp đồng lao động thì phải báo trước bao lâu?",
+    "expected_answer": "Thông thường, người lao động phải báo trước ít nhất 45 ngày đối với hợp đồng không xác định thời hạn; 30 ngày đối với hợp đồng xác định thời hạn từ 12 đến 36 tháng; và 03 ngày làm việc đối với hợp đồng xác định thời hạn dưới 12 tháng. Một số trường hợp theo luật cho phép người lao động nghỉ không cần báo trước.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 35 về quyền đơn phương chấm dứt hợp đồng lao động của người lao động."
+  },
+  {
+    "question": "Công ty có thể sa thải người lao động chỉ vì không thích thái độ làm việc của họ không?",
+    "expected_answer": "Không. Sa thải là một hình thức xử lý kỷ luật và chỉ được áp dụng trong các trường hợp thuộc Điều 125, chẳng hạn một số hành vi vi phạm nghiêm trọng, tái phạm sau khi đã bị kỷ luật hoặc tự ý bỏ việc nhiều ngày không có lý do chính đáng. Người sử dụng lao động còn phải chứng minh lỗi và tuân thủ trình tự, thủ tục xử lý kỷ luật.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 122 về nguyên tắc, trình tự xử lý kỷ luật lao động và Điều 125 về hình thức sa thải."
+  },
+  {
+    "question": "Công ty nhắn qua Zalo rằng nhân viên bị sa thải ngay lập tức, không nêu lý do và không báo trước. Việc này có hợp pháp không?",
+    "expected_answer": "Chưa thể kết luận hợp pháp chỉ dựa trên việc thông báo qua Zalo. Công ty phải có căn cứ phù hợp: nếu là sa thải thì phải thuộc trường hợp luật định và tuân thủ trình tự xử lý kỷ luật; nếu là đơn phương chấm dứt hợp đồng thì phải đáp ứng căn cứ và thời hạn báo trước tương ứng. Thông báo qua Zalo không tự động thay thế các yêu cầu về căn cứ, thủ tục và thông báo bằng văn bản; cần kiểm tra toàn bộ hồ sơ, nội quy và bằng chứng liên quan.",
+    "expected_context": "Bộ luật Lao động 2019, Điều 36 về quyền đơn phương chấm dứt hợp đồng của người sử dụng lao động, Điều 45 về thông báo chấm dứt hợp đồng và Điều 122, Điều 125 về xử lý kỷ luật, sa thải."
   }
 ]
