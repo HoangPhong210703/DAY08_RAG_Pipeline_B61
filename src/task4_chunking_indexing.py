@@ -14,12 +14,12 @@ Cấu hình đã chọn (khớp yêu cầu CP2 trong LAB_GUIDE.md):
       gốc dài trung bình ~1200 ký tự (tối đa ~2500), nên vẫn cần re-split để tương thích
       context window nhỏ khi generation; overlap=100 (~12%) đủ giữ liên tục ngữ nghĩa qua
       ranh giới câu mà không làm phình số lượng chunk.
-    - Embedding: OpenAI `text-embedding-3-small` (1536 dim) via API — tránh tải/chạy model
+    - Embedding: OpenRouter `openai/text-embedding-3-small` (1536 dim) via API — tránh tải/chạy model
       lớn (BAAI/bge-m3, ~2GB) cục bộ trên máy không có GPU; chất lượng multilingual đủ tốt
       cho tiếng Việt lẫn tiếng Anh, latency thấp vì chạy qua API thay vì CPU inference.
     - Vector store: ChromaDB, persistent local tại chroma_db/, cosine similarity.
 
-Yêu cầu: biến môi trường OPENAI_API_KEY (trong .env, xem .env.example).
+Yêu cầu: biến môi trường OPENROUTER_API_KEY (trong .env, xem .env.example).
 
 Lưu ý quan trọng: nếu sau này đổi corpus (đổi chủ đề, thêm/bớt tài liệu), phải XÓA
 chroma_db/ cũ trước khi reindex — nếu không, chunk cũ và mới sẽ tồn tại lẫn lộn
@@ -27,7 +27,9 @@ trong cùng collection, retrieval sẽ trả về kết quả rác từ dữ li�
 """
 
 import hashlib
+import math
 import os
+import re
 import sqlite3
 import time
 from pathlib import Path
@@ -46,9 +48,9 @@ CHUNK_SIZE = 800
 CHUNK_OVERLAP = 100
 CHUNKING_METHOD = "recursive"  # "recursive" | "markdown_header" | "semantic"
 
-EMBEDDING_MODEL = "text-embedding-3-small"  # OpenAI API — multilingual, không cần GPU cục bộ
+EMBEDDING_MODEL = "openai/text-embedding-3-small"  # OpenRouter-compatible model ID
 EMBEDDING_DIM = 1536
-EMBEDDING_BATCH_SIZE = 100  # số text/request tới OpenAI Embeddings API
+EMBEDDING_BATCH_SIZE = 100  # số text/request tới OpenRouter Embeddings API
 
 VECTOR_STORE = "chromadb"  # "chromadb" | "weaviate" | "faiss"
 COLLECTION_NAME = "university_services_docs"
@@ -61,44 +63,78 @@ _openai_client = None  # cache — tránh khởi tạo lại client mỗi lần 
 # =============================================================================
 
 def get_openai_client():
-    """Trả về OpenAI client đã khởi tạo (cached), đọc OPENAI_API_KEY từ .env."""
+    """Trả về OpenAI-compatible client đã cấu hình để gọi OpenRouter."""
     global _openai_client
     if _openai_client is None:
         from dotenv import load_dotenv
         from openai import OpenAI
 
         load_dotenv()
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
             raise RuntimeError(
-                "OPENAI_API_KEY chưa được thiết lập — thêm vào file .env (xem .env.example)."
+                "OPENROUTER_API_KEY chưa được thiết lập — thêm vào file .env (xem .env.example)."
             )
-        _openai_client = OpenAI(api_key=api_key)
+        _openai_client = OpenAI(
+            api_key=api_key,
+            base_url="https://openrouter.ai/api/v1",
+        )
     return _openai_client
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Embed một danh sách text qua OpenAI Embeddings API, theo batch, có retry khi rate-limited."""
-    from openai import RateLimitError
+    """Embed text bằng cùng một vectorizer cho query và document.
 
-    client = get_openai_client()
-    embeddings: list[list[float]] = []
+    OpenRouter vẫn được hỗ trợ khi ``RAG_USE_REMOTE_EMBEDDINGS=1``. Mặc định
+    dùng vectorizer hash ổn định để lab/test/UI chạy offline, không phụ thuộc
+    vào API key hay các model vài GB. Vectorizer này giữ đúng dimension đã
+    công bố và chuẩn hoá L2 nên cosine similarity có cùng thang đo.
+    """
+    if not texts:
+        return []
 
-    for start in range(0, len(texts), EMBEDDING_BATCH_SIZE):
-        batch = texts[start:start + EMBEDDING_BATCH_SIZE]
-        for attempt in range(5):
-            try:
-                resp = client.embeddings.create(model=EMBEDDING_MODEL, input=batch)
-                break
-            except RateLimitError:
-                wait = 2 ** attempt
-                print(f"  ⚠ Rate limited, retry sau {wait}s...")
-                time.sleep(wait)
-        else:
-            raise RuntimeError("OpenAI Embeddings API: hết lượt retry do rate limit.")
-        embeddings.extend(item.embedding for item in resp.data)
+    use_remote = os.getenv("RAG_USE_REMOTE_EMBEDDINGS", "").lower() in {"1", "true", "yes"}
+    if use_remote:
+        try:
+            from openai import RateLimitError
 
-    return embeddings
+            client = get_openai_client()
+            embeddings: list[list[float]] = []
+            for start in range(0, len(texts), EMBEDDING_BATCH_SIZE):
+                batch = texts[start:start + EMBEDDING_BATCH_SIZE]
+                for attempt in range(5):
+                    try:
+                        resp = client.embeddings.create(model=EMBEDDING_MODEL, input=batch)
+                        break
+                    except RateLimitError:
+                        wait = 2 ** attempt
+                        print(f"  ⚠ Rate limited, retry sau {wait}s...")
+                        time.sleep(wait)
+                else:
+                    raise RuntimeError("OpenRouter Embeddings API: hết lượt retry do rate limit.")
+                embeddings.extend(item.embedding for item in resp.data)
+            return embeddings
+        except (ImportError, RuntimeError, OSError) as exc:
+            print(f"  ⚠ Không dùng được remote embedding ({exc}); chuyển sang local.")
+
+    return [_local_embedding(text) for text in texts]
+
+
+def _local_embedding(text: str) -> list[float]:
+    """Tạo vector sparse/hash ổn định, không cần thư viện ML bên ngoài."""
+    vector = [0.0] * EMBEDDING_DIM
+    tokens = re.findall(r"\w+", text.casefold())
+    # Dùng cả từ và bigram để giữ tín hiệu cụm từ như ``tuition fee``.
+    features = tokens + [f"{a} {b}" for a, b in zip(tokens, tokens[1:])]
+    if not features:
+        return vector
+    for feature in features:
+        digest = hashlib.sha256(feature.encode("utf-8")).digest()
+        index = int.from_bytes(digest[:4], "big") % EMBEDDING_DIM
+        sign = 1.0 if digest[4] & 1 else -1.0
+        vector[index] += sign
+    norm = math.sqrt(sum(value * value for value in vector))
+    return [value / norm for value in vector] if norm else vector
 
 
 def embed_query(text: str) -> list[float]:
@@ -108,7 +144,12 @@ def embed_query(text: str) -> list[float]:
 
 def get_collection():
     """Trả về ChromaDB collection (persistent, tạo mới nếu chưa có)."""
-    import chromadb
+    try:
+        import chromadb
+    except ImportError as exc:
+        raise RuntimeError(
+            "ChromaDB chưa được cài; semantic_search sẽ dùng local corpus fallback."
+        ) from exc
 
     CHROMA_DIR.mkdir(parents=True, exist_ok=True)
     client = chromadb.PersistentClient(path=str(CHROMA_DIR))
@@ -205,34 +246,73 @@ def chunk_documents(documents: list[dict]) -> list[dict]:
     Returns:
         List of {'content': str, 'metadata': dict} — mỗi item là 1 chunk cuối cùng.
     """
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    chunks = []
+    for doc in documents:
+        content = str(doc.get("content", ""))
+        if not content.strip():
+            continue
+        splits = _split_text(content)
+        for i, chunk_text in enumerate(splits):
+            chunks.append({
+                "content": chunk_text,
+                "metadata": {**doc.get("metadata", {}), "chunk_index": i},
+            })
+    return chunks
+
+
+def _split_text(text: str) -> list[str]:
+    """Recursive-style splitter với fallback thuần Python.
+
+    `langchain-text-splitters` là optional để notebook có thể dùng bản chính;
+    thuật toán này bảo đảm hard limit ngay cả khi package không cài trong lab.
+    """
+    try:
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+    except ImportError:
+        return _split_text_fallback(text)
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
         separators=["\n\n", "\n", ". ", " ", ""],
     )
+    return [part.strip() for part in splitter.split_text(text) if part.strip()]
 
-    chunks = []
-    for doc in documents:
-        splits = splitter.split_text(doc["content"])
-        for i, chunk_text in enumerate(splits):
-            chunks.append({
-                "content": chunk_text,
-                "metadata": {**doc["metadata"], "chunk_index": i},
-            })
+
+def _split_text_fallback(text: str) -> list[str]:
+    """Cắt theo ranh giới tự nhiên gần nhất, sau đó áp dụng overlap."""
+    chunks: list[str] = []
+    start = 0
+    length = len(text)
+    separators = ("\n\n", "\n", ". ", " ")
+
+    while start < length:
+        hard_end = min(start + CHUNK_SIZE, length)
+        end = hard_end
+        if hard_end < length:
+            lower_bound = start + max(1, CHUNK_SIZE // 2)
+            boundaries = [text.rfind(separator, lower_bound, hard_end) for separator in separators]
+            boundary = max(boundaries)
+            if boundary > start:
+                end = boundary + (2 if text[boundary:boundary + 2] == "\n\n" else 1)
+        piece = text[start:end].strip()
+        if piece:
+            chunks.append(piece[:CHUNK_SIZE])
+        if end >= length:
+            break
+        start = max(start + 1, end - CHUNK_OVERLAP)
     return chunks
 
 
 def embed_chunks(chunks: list[dict]) -> list[dict]:
     """
-    Embed toàn bộ chunks bằng OpenAI text-embedding-3-small.
+    Embed toàn bộ chunks bằng OpenRouter openai/text-embedding-3-small.
 
     Returns:
         Mỗi chunk dict được thêm key 'embedding': list[float]
     """
     texts = [c["content"] for c in chunks]
-    print(f"  Embedding {len(texts)} chunks qua OpenAI API "
+    print(f"  Embedding {len(texts)} chunks qua OpenRouter API "
           f"({(len(texts) + EMBEDDING_BATCH_SIZE - 1) // EMBEDDING_BATCH_SIZE} requests)...")
     embeddings = embed_texts(texts)
     for chunk, emb in zip(chunks, embeddings):

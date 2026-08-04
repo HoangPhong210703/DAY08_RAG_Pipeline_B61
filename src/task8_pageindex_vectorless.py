@@ -123,6 +123,8 @@ def pageindex_search(query: str, top_k: int = 5) -> list[dict]:
             'source': 'pageindex'
         }
     """
+    if not query or not query.strip() or top_k <= 0:
+        return []
     index = _get_structure_index()
     query_tokens = _tokenize(query)
     if not query_tokens or not index:

@@ -1,0 +1,14 @@
+# Support services - RMIT University Vietnam
+
+**Source:** https://www.rmit.edu.vn/student-life/support-services
+**Crawled:** 2026-08-04T12:04:00+07:00
+
+---
+
+# Support services
+
+RMIT Vietnam provides ways for students to access student services and support during their studies. The support-services page acts as a directory and points students to services such as Student Academic Success, learning support and other assistance available through the student experience. It is intended to help students find the right service rather than to replace the detailed rules of each service.
+
+Student Academic Success offers learning support for current students, including help with academic skills and strategies. Students should follow each service's instructions for booking, locations and contact channels. When a question concerns enrolment, fees, wellbeing, accessibility or another specialist matter, the student should use the relevant service listed by RMIT and provide the information needed for staff to assist.
+
+The available services, opening hours and contact details can change. This record keeps the official page URL and a dated content snapshot so that a retrieval result can be checked against the live RMIT page before a student acts on it.

@@ -37,10 +37,51 @@ def build_bm25_index(corpus: list[dict]):
     Args:
         corpus: List of {'content': str, 'metadata': dict}
     """
-    from rank_bm25 import BM25Okapi
-
     tokenized_corpus = [_tokenize(doc["content"]) for doc in corpus]
+    try:
+        from rank_bm25 import BM25Okapi
+    except ImportError:
+        return _SimpleBM25(tokenized_corpus)
     return BM25Okapi(tokenized_corpus)
+
+
+class _SimpleBM25:
+    """BM25Okapi-compatible fallback for the minimal lab environment."""
+
+    def __init__(self, corpus: list[list[str]], k1: float = 1.5, b: float = 0.75):
+        from collections import Counter
+        import math
+
+        self.corpus = corpus
+        self.k1 = k1
+        self.b = b
+        self.doc_lengths = [len(tokens) for tokens in corpus]
+        self.avgdl = sum(self.doc_lengths) / len(self.doc_lengths) if corpus else 0.0
+        document_frequency = Counter(token for tokens in corpus for token in set(tokens))
+        self.idf = {
+            token: math.log(1.0 + (len(corpus) - frequency + 0.5) / (frequency + 0.5))
+            for token, frequency in document_frequency.items()
+        }
+
+    def get_scores(self, query_tokens: list[str]) -> list[float]:
+        from collections import Counter
+
+        scores: list[float] = []
+        for tokens, doc_length in zip(self.corpus, self.doc_lengths):
+            frequencies = Counter(tokens)
+            score = 0.0
+            for token in query_tokens:
+                frequency = frequencies.get(token, 0)
+                if not frequency:
+                    continue
+                denominator = frequency + self.k1 * (
+                    1.0 - self.b + self.b * doc_length / (self.avgdl or 1.0)
+                )
+                score += self.idf.get(token, 0.0) * (
+                    frequency * (self.k1 + 1.0) / denominator
+                )
+            scores.append(score)
+        return scores
 
 
 def _get_index():
@@ -69,7 +110,12 @@ def lexical_search(query: str, top_k: int = 10) -> list[dict]:
         }
         Sorted by score descending.
     """
+    if not query or not query.strip() or top_k <= 0:
+        return []
+
     bm25, corpus = _get_index()
+    if not corpus:
+        return []
     scores = bm25.get_scores(_tokenize(query))
 
     ranked_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)

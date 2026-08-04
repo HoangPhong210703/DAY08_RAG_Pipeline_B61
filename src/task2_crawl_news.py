@@ -17,9 +17,12 @@ Gợi ý chủ đề: thông báo tuyển sinh, sự kiện, dịch vụ thư vi
 """
 
 import asyncio
+from html.parser import HTMLParser
 import json
 from datetime import datetime
 from pathlib import Path
+
+import requests
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "landing" / "news"
 
@@ -29,12 +32,49 @@ def setup_directory():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# TODO: Điền danh sách URL bài viết cần crawl
 ARTICLE_URLS = [
-    # Ví dụ (trang công khai RMIT Vietnam):
-    # "https://www.rmit.edu.vn/libraryvn/...",
-    # "https://www.rmit.edu.vn/students/...",
+    "https://www.rmit.edu.vn/study-at-rmit/tuition-fees",
+    "https://www.rmit.edu.vn/study-at-rmit/scholarships",
+    "https://www.rmit.edu.vn/libraryvn/student-support/book-a-study-room",
+    "https://www.rmit.edu.vn/students/support/student-academic-success",
+    "https://www.rmit.edu.vn/student-life/support-services",
 ]
+
+
+class _VisibleTextParser(HTMLParser):
+    """Nhặt title và text cơ bản khi Crawl4AI không có trong môi trường."""
+
+    _ignored = {"script", "style", "noscript", "svg"}
+
+    def __init__(self):
+        super().__init__()
+        self.title = ""
+        self._in_title = False
+        self._ignored_depth = 0
+        self.parts: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag == "title":
+            self._in_title = True
+        if tag in self._ignored:
+            self._ignored_depth += 1
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag == "title":
+            self._in_title = False
+        if tag in self._ignored and self._ignored_depth:
+            self._ignored_depth -= 1
+
+    def handle_data(self, data):
+        value = " ".join(data.split())
+        if not value or self._ignored_depth:
+            return
+        if self._in_title:
+            self.title += value
+        elif len(value) > 1:
+            self.parts.append(value)
 
 
 async def crawl_article(url: str) -> dict:
@@ -49,18 +89,37 @@ async def crawl_article(url: str) -> dict:
             "content_markdown": str
         }
     """
-    from crawl4ai import AsyncWebCrawler
+    try:
+        from crawl4ai import AsyncWebCrawler
 
-    # TODO: Implement crawling logic
-    # async with AsyncWebCrawler() as crawler:
-    #     result = await crawler.arun(url=url)
-    #     return {
-    #         "url": url,
-    #         "title": result.metadata.get("title", "Unknown"),
-    #         "date_crawled": datetime.now().isoformat(),
-    #         "content_markdown": result.markdown,
-    #     }
-    raise NotImplementedError("Implement crawl_article")
+        async with AsyncWebCrawler() as crawler:
+            result = await crawler.arun(url=url)
+            metadata = getattr(result, "metadata", {}) or {}
+            markdown = getattr(result, "markdown", "") or ""
+            return {
+                "url": url,
+                "title": metadata.get("title", "Unknown"),
+                "date_crawled": datetime.now().isoformat(),
+                "content_markdown": markdown.strip(),
+            }
+    except ImportError:
+        # Requests/HTMLParser fallback keeps the task runnable without a
+        # browser binary; production crawling can still opt into Crawl4AI.
+        response = requests.get(
+            url,
+            timeout=30,
+            headers={"User-Agent": "RAG-lab-crawler/1.0"},
+        )
+        response.raise_for_status()
+        parser = _VisibleTextParser()
+        parser.feed(response.text)
+        content = "\n\n".join(parser.parts)
+        return {
+            "url": url,
+            "title": parser.title.strip() or "Unknown",
+            "date_crawled": datetime.now().isoformat(),
+            "content_markdown": content,
+        }
 
 
 async def crawl_all():
@@ -74,7 +133,10 @@ async def crawl_all():
         # Lưu file JSON
         filename = f"article_{i:02d}.json"
         filepath = DATA_DIR / filename
-        filepath.write_text(json.dumps(article, ensure_ascii=False, indent=2))
+        filepath.write_text(
+            json.dumps(article, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
         print(f"  ✓ Saved: {filepath}")
 
 
