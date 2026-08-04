@@ -1,12 +1,14 @@
 """
-RAG Chatbot — University Services (Starter Template)
+RAG Chatbot — Pháp luật Lao động Việt Nam
 Streamlit app kết nối RAG Retrieval (Task 9) và Generation (Task 10).
+
+Domain đã đổi từ "university services" (bản gốc bài lab) sang pháp luật lao động Việt
+Nam — khớp corpus thật đang được index ở Task 4 (ragvbpl.sqlite, xem context.md).
 
 Chạy:
     streamlit run app.py
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -19,13 +21,15 @@ load_dotenv()
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.task10_generation import generate_with_citation
+
 # =============================================================================
 # PAGE CONFIG
 # =============================================================================
 
 st.set_page_config(
-    page_title="University Services RAG Chatbot",
-    page_icon="🎓",
+    page_title="Labor Law RAG Chatbot",
+    page_icon="⚖️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -35,26 +39,52 @@ st.set_page_config(
 # =============================================================================
 
 with st.sidebar:
-    st.title("🎓 University Services RAG")
-    st.caption("Trợ lý hỏi đáp về dịch vụ và chính sách đại học (học phí, học bổng, ký túc xá, thư viện)")
+    st.title("⚖️ Pháp Luật Lao Động RAG")
+    st.caption("Trợ lý hỏi đáp về pháp luật lao động Việt Nam (Bộ luật Lao động, BHXH, Công đoàn, ATVSLĐ)")
 
-    st.divider()
 
-    st.subheader("💡 Câu hỏi gợi ý")
-    suggestions = [
-        "Học phí tại RMIT Vietnam là bao nhiêu?",
-        "Làm sao để đặt phòng học nhóm ở thư viện?",
-        "Điều kiện xin học bổng Academic Achievement?",
-        "Dịch vụ hỗ trợ chỗ ở cho sinh viên như thế nào?",
-        "Cách đăng ký học phần qua myRMIT?",
-    ]
-    for s in suggestions:
-        if st.button(s, use_container_width=True, key=f"sug_{s[:20]}"):
-            st.session_state["pending_query"] = s
+    # no need for suggestions
+    # st.subheader("💡 Câu hỏi gợi ý")
+    # suggestions = [
+    #     "Thời giờ làm việc bình thường tối đa của người lao động là bao nhiêu?",
+    #     "Lương thử việc tối thiểu phải bằng bao nhiêu phần trăm lương của công việc đó?",
+    #     "Người lao động muốn đơn phương chấm dứt hợp đồng lao động thì phải báo trước bao lâu?",
+    #     "Làm thêm giờ vào ngày lễ thì được trả ít nhất bao nhiêu phần trăm lương?",
+    #     "Người lao động làm đủ 12 tháng được nghỉ phép năm bao nhiêu ngày?",
+    # ]
+    # for s in suggestions:
+    #     if st.button(s, use_container_width=True, key=f"sug_{s[:20]}"):
+    #         st.session_state["pending_query"] = s
 
     st.divider()
     st.subheader("⚙️ Thiết lập")
+
     top_k = st.slider("Số chunks retrieval (top_k)", 3, 10, 5)
+
+    mode_label = st.radio(
+        "Chế độ truy xuất",
+        ["Hybrid (Semantic + BM25)", "Chỉ Semantic", "Chỉ Lexical (BM25)"],
+        help="So sánh Hybrid retrieval với từng phương pháp riêng lẻ trên cùng 1 câu hỏi.",
+    )
+    mode = {
+        "Hybrid (Semantic + BM25)": "hybrid",
+        "Chỉ Semantic": "semantic",
+        "Chỉ Lexical (BM25)": "lexical",
+    }[mode_label]
+
+    use_reranking = st.checkbox(
+        "Bật RRF Reranking", value=True,
+        help="Chỉ áp dụng ở chế độ Hybrid.", disabled=(mode != "hybrid"),
+    )
+
+    score_threshold = st.slider(
+        "Ngưỡng fallback PageIndex (cosine)", 0.0, 1.0, 0.25, step=0.05,
+        help="Nếu điểm cosine cao nhất của Semantic Search thấp hơn ngưỡng này, hệ thống thử fallback sang PageIndex.",
+    )
+
+    with st.expander("🎛️ Tham số LLM"):
+        temperature = st.slider("Temperature", 0.0, 1.0, 0.3, step=0.1)
+        top_p = st.slider("Top-p (nucleus sampling)", 0.0, 1.0, 0.9, step=0.05)
 
     st.divider()
     st.caption("**Kiến trúc hệ thống:**")
@@ -73,8 +103,8 @@ if "pending_query" not in st.session_state:
 # MAIN CHAT AREA
 # =============================================================================
 
-st.title("🎓 University Services RAG Chatbot")
-st.caption("Hệ thống hỏi đáp thông tin dịch vụ đại học (Học phí, Học bổng, Ký túc xá, Thư viện)")
+st.title("⚖️ Pháp Luật Lao Động RAG Chatbot")
+st.caption("Hệ thống hỏi đáp pháp luật lao động Việt Nam (Bộ luật Lao động, BHXH, Công đoàn, An toàn vệ sinh lao động)")
 
 # Hiển thị lịch sử chat
 for msg in st.session_state.messages:
@@ -96,7 +126,7 @@ for msg in st.session_state.messages:
 # =============================================================================
 
 # Xử lý khi bấm nút gợi ý hoặc nhập câu hỏi mới
-user_input = st.chat_input("Nhập câu hỏi của bạn về chính sách/dịch vụ đại học...")
+user_input = st.chat_input("Nhập câu hỏi của bạn về pháp luật lao động...")
 query = user_input or st.session_state.pending_query
 
 if query:
@@ -111,27 +141,32 @@ if query:
     with st.chat_message("assistant"):
         with st.spinner("Đang tìm kiếm tài liệu và tổng hợp câu trả lời..."):
             try:
-                # TODO (Học viên): Tích hợp hàm sinh câu trả lời từ Task 10
-                # Ví dụ:
-                # from src.task10_generation import generate_with_citation
-                # response = generate_with_citation(query, top_k=top_k)
-                # answer = response["answer"]
-                # sources = response.get("sources", [])
-
-                # Tạm thời mockup để test UI:
-                from src.task10_generation import generate_with_citation
-                response = generate_with_citation(query, top_k=top_k)
+                response = generate_with_citation(
+                    query,
+                    top_k=top_k,
+                    temperature=temperature,
+                    top_p=top_p,
+                    score_threshold=score_threshold,
+                    use_reranking=use_reranking,
+                    mode=mode,
+                )
                 answer = response.get("answer", "Chưa thể trả lời.")
                 sources = response.get("sources", [])
+                retrieval_source = response.get("retrieval_source", mode)
 
             except NotImplementedError:
                 answer = "⚠️ **Task 10 chưa được implement.** Hãy hoàn thành `src/task10_generation.py` để kết nối pipeline vào UI!"
                 sources = []
+                retrieval_source = None
             except Exception as e:
                 answer = f"❌ **Lỗi khi chạy RAG Pipeline:** {e}"
                 sources = []
+                retrieval_source = None
 
             st.markdown(answer)
+
+            if retrieval_source:
+                st.caption(f"🔎 Nguồn truy xuất: `{retrieval_source}`")
 
             if sources:
                 with st.expander(f"📚 Nguồn tham khảo ({len(sources)} chunks)"):
