@@ -583,13 +583,17 @@ run_dashboard()
 
 ### Phân Công Công Việc
 
+Danh sách thành viên đầy đủ: [TEAMMATES.md](TEAMMATES.md)
 
-| Thành viên | MSSV | Nhiệm vụ | Trạng thái |
-| -------------- | ------ | ------------ | -------------- |
-|              |      |            |              |
-|              |      |            |              |
-|              |      |            |              |
-|              |      |            |              |
+
+| Thành viên | MSSV |
+| -------------- | ------ |
+| Hoàng Nguyễn Phong | 2A202601077 |
+| Trần Nguyễn Thế Nhật | 2A202601155 |
+| Nguyễn Trọng Toàn | 2A202601493 |
+| Nguyễn Văn Đạt | 2A202601969 |
+| Nguyễn Đình Phúc | 2A202601835 |
+| Lê Hồng Đức | 2A202601313 |
 
 ---
 
