@@ -124,20 +124,24 @@ def get_collection():
 
 def _load_legal_from_sqlite() -> list[dict]:
     """
-    Đọc bảng `chunks` (đã structure-aware chunked) từ ragvbpl.sqlite.
+    Đọc TOÀN BỘ bảng `chunks` (đã structure-aware chunked) từ ragvbpl.sqlite.
 
-    Chỉ lấy chunks thuộc domain "labor" (Lao Động) — cột `legal_domains` là JSON array
-    dạng '["labor"]' hoặc '["labor", "social_insurance_employment"]'; lọc bằng LIKE vì
-    SQLite mặc định không có hàm JSON array-contains built-in cho mọi bản.
+    Trước đây lọc theo `legal_domains LIKE '%"labor"%'`, nhưng domain tag chỉ được gán
+    bằng keyword-match trên title/lĩnh vực/ngành của CHÍNH văn bản đó (xem
+    `data_ingestion/scope.py::classify_domains`) — không lan sang các văn bản vào corpus
+    qua relationship expansion (nghị định/thông tư hướng dẫn/sửa đổi một luật lao động
+    seed) nhưng không lặp lại từ khoá "lao động" trong tiêu đề riêng của chúng. Kết quả:
+    95/148 documents (64%) không có domain tag nào — KHÔNG phải do mất dữ liệu lúc
+    chunking (chunk-level và document-level "labor" tag khớp chính xác 881/881), mà do
+    bước classify domain ở thượng nguồn vốn đã không đầy đủ. Không lọc domain ở đây nữa
+    — index toàn bộ corpus.
     """
     if not SQLITE_PATH.exists():
         return []
 
     conn = sqlite3.connect(SQLITE_PATH)
     conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT * FROM chunks WHERE legal_domains LIKE '%\"labor\"%'"
-    ).fetchall()
+    rows = conn.execute("SELECT * FROM chunks").fetchall()
     conn.close()
 
     documents = []

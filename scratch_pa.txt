@@ -1,8 +1,0 @@
-('45/2019/QH14', 1, '', '', 'Phạm vi điều chỉnh', 317, 'Bộ Luật lao động')
-('45/2019/QH14', 2, '', '', 'Đối tượng áp dụng', 252, 'Bộ Luật lao động')
-('45/2019/QH14', 3, '', '', 'Giải thích từ ngữ', 2770, 'Bộ Luật lao động')
-('45/2019/QH14', 4, '', '', 'Chính sách của Nhà nước về lao động', 1458, 'Bộ Luật lao động')
-('45/2019/QH14', 5, '', '', 'Quyền và nghĩa vụ của người lao động', 1523, 'Bộ Luật lao động')
-('45/2019/QH14', 6, '', '', 'Quyền và nghĩa vụ của người sử dụng lao động', 1534, 'Bộ Luật lao động')
-('45/2019/QH14', 7, '', '', 'Xây dựng quan hệ lao động', 966, 'Bộ Luật lao động')
-('45/2019/QH14', 8, '', '', 'Các hành vi bị nghiêm cấm trong lĩnh vực lao động', 850, 'Bộ Luật lao động')
